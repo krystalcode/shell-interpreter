@@ -1,0 +1,20 @@
+version: '2'
+
+services:
+
+  interpreter:
+
+    # Build.
+    image: krystalcode/f_haskell_stack
+
+    # Run.
+    container_name: shell_interpreter
+
+    # Configuration.
+    command: sleep infinity
+
+    volumes:
+      - .:/src
+      - ${DOCKER_COMPOSE_VOLUMES_DIR}/shell-interpreter/stack:/root/.stack
+
+    working_dir: /src
