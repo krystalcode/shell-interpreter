@@ -3,7 +3,7 @@
 module ShellInterpreter.Interpretation
        ( Interpretation(..)
        , Item(..)
-       , OptionMode(..)
+       , Config(..)
        , OptionPrefix(..)
        , OptionSeparator(..)
        , Order(..)
@@ -26,8 +26,8 @@ import qualified Data.Text as T (Text, concat)
 data Interpretation = Interpretation
     { command :: T.Text
     , items   :: [Item]
-    , order   :: Order
-    , mode    :: OptionMode   }
+    , config  :: Config
+    }
 
 data Item
     = Option
@@ -36,11 +36,13 @@ data Item
     | Argument
         { aKey   :: T.Text }
 
-data Order = Given | OptionsFirst | ArgumentsFirst
+data Config = Config
+    { order     :: Order
+    , prefix    :: OptionPrefix
+    , separator :: OptionSeparator
+    }
 
-data OptionMode = OptionMode
-    { prefix    :: OptionPrefix
-    , separator :: OptionSeparator }
+data Order = Given | OptionsFirst | ArgumentsFirst
 
 data OptionPrefix = None | SingleDash | DoubleDash
 
@@ -51,9 +53,9 @@ data OptionSeparator = Space | Equality
 
 make :: Interpretation -> T.Text
 make interpretation = T.concat [command interpretation, " ", formattedItems]
-    where sequencedItems = sequence (items interpretation) (order interpretation)
+    where sequencedItems = sequence (items interpretation) (order . config $ interpretation)
           formattedItems = T.concat $ intersperse " " (map format' sequencedItems)
-          format'        = format (mode interpretation)
+          format'        = format (config interpretation)
 
 
 -- Functions/types for internal use.
@@ -68,9 +70,9 @@ sequence items' order'
     where options   = filter itemIsOption items'
           arguments = filter itemIsArgument items'
 
--- Format an Item into text, according to the given mode.
-format :: OptionMode -> Item -> T.Text
-format mode' item
+-- Format an Item into text, according to the given configuratin.
+format :: Config -> Item -> T.Text
+format config' item
     | itemIsArgument item = aKey item
     | itemIsOption item   = if (isNothing value') then T.concat [prefix', key']
                                                   else T.concat [prefix', key', separator', "\"", fromJust value', "\""]
@@ -78,20 +80,20 @@ format mode' item
     where key'   = oKey item
           value' = oValue item
 
-          prefix'    = getOptionPrefix mode'
-          separator' = getOptionSeparator mode'
+          prefix'    = getOptionPrefix config'
+          separator' = getOptionSeparator config'
 
--- Get the prefix to prepend to options according to the given mode.
-getOptionPrefix :: OptionMode -> T.Text
-getOptionPrefix mode'@(OptionMode prefix' separator')
+-- Get the prefix to prepend to options according to the given configuration.
+getOptionPrefix :: Config -> T.Text
+getOptionPrefix (Config order' prefix' separator')
     | optionPrefixIsNone       prefix' = ""
     | optionPrefixIsSingleDash prefix' = "-"
     | optionPrefixIsDoubleDash prefix' = "--"
 
 -- Get the separator to insert between options' keys and values, according to
--- the given mode.
-getOptionSeparator :: OptionMode -> T.Text
-getOptionSeparator mode'@(OptionMode prefix' separator')
+-- the given configuration.
+getOptionSeparator :: Config -> T.Text
+getOptionSeparator (Config order' prefix' separator')
     | optionSeparatorIsSpace separator'    = " "
     | optionSeparatorIsEquality separator' = "="
 
