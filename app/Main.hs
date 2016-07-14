@@ -1,6 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
-import Lib
+import ShellInterpreter.Interpretation
 
 main :: IO ()
-main = someFunc
+main = print $ make interpretation
