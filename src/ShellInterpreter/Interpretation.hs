@@ -48,6 +48,8 @@ data OptionPrefix = None | SingleDash | DoubleDash
 
 data OptionSeparator = Space | Equality
 
+defaultConfig = Config OptionsFirst DoubleDash Equality
+
 -- Converts the Interpretation option into a text that includes the command with
 -- its options and arguments properly formatted and in the correct sequence.
 
