@@ -1,0 +1,2 @@
+# Ignore Haskell Stack development/build files.
+/.stack-work
